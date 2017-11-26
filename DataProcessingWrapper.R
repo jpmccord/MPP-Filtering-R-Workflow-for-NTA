@@ -1,7 +1,7 @@
 #James McCord
 #November 26, 2017
 
-# Check for, install, and load necessary packages
+##### Check for, install, and load necessary packages ####
 
 check.packages <- function(package){
   new.package <- package[!(package %in% installed.packages()[, "Package"])]
@@ -115,15 +115,15 @@ source("ExperimentProcessing.R")
 ####### Specify Cross-Mode Combination Method (If Needed) #######
 source("CrossExperimentMatching.R")
 
-####### Process Files #######
+####### Batch Process Files #######
 processed_samples <- lapply(Filelist, NTA_Process)
 
-####### Join Processed Files #######
+####### Join Processed Files in Pos/Neg Pairs #######
 if (PairedProcessing == TRUE) {
 joined_samples <- NTA_Join(processed_samples)
 }
 
-### Placeholder compound list generation ###
+### Compound list generation for Dashboad Search ###
 if (PairedProcessing == TRUE) {
   lapply(joined_samples$rawfiles, UniqueCompounds)
 } else {
