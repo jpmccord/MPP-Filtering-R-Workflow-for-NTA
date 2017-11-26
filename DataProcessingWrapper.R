@@ -1,18 +1,18 @@
 #James McCord
 #November 26, 2017
- 
-require("tidyverse") || install.packages("tidyverse")
-require("stringr") || install.packages("stringr")
-require("sqldf") || install.packages("sqldf")
-require("readxl") || install.packages("readxl")
-require("data.table") || install.packages("data.table")
-require("tcltk") || install.packages("tcltk")
-library("data.table")
-library("tidyverse")
-library("stringr")
-library("sqldf")
-library("readxl")
-library("tcltk")
+
+# Check for, install, and load necessary packages
+
+check.packages <- function(package){
+  new.package <- package[!(package %in% installed.packages()[, "Package"])]
+  if (length(new.package)) 
+    install.packages(new.package, dependencies = TRUE)
+  sapply(package, require, character.only = TRUE)
+}
+
+packages<-c("tidyverse", "stringr", "sqldf", "readxl", "data.table", "tcltk")
+
+check.packages(packages)
 
 ####### Create global functions for use later ######
 SampleInput <- # Generic data input from multiple file types
@@ -34,7 +34,7 @@ SampleInput <- # Generic data input from multiple file types
     return(Data)
   }
 
-adductSearchSQL <- # ID RT and Mass clustering with SQL
+adductSearchSQL <- # RT and Mass matching with SQL
   function(input,
            adductMass,
            masserror,
@@ -81,7 +81,6 @@ adductSearchSQL <- # ID RT and Mass clustering with SQL
       )
     return(output)
   } 
-
 
 UniqueCompounds <- #Parse unique compounds from output files for Dashboard Search
   function(filename) {
