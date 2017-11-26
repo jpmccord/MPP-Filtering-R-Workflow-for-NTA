@@ -1,5 +1,5 @@
 #James McCord
-#August 10, 2017
+#November 26, 2017
  
 require("tidyverse") || install.packages("tidyverse")
 require("stringr") || install.packages("stringr")
@@ -83,7 +83,7 @@ adductSearchSQL <- # ID RT and Mass clustering with SQL
   } 
 
 
-UniqueCompounds <- #Parse output files for Dashboard Search
+UniqueCompounds <- #Parse unique compounds from output files for Dashboard Search
   function(filename) {
     
     input <- SampleInput(filename) 
@@ -108,10 +108,10 @@ UniqueCompounds <- #Parse output files for Dashboard Search
   }
 
 ####### Specify Global Variables From File #######
-source("SourceVariables.R")
+source("config.R")
 
 ####### Specify Per-File Processing Workflow #######
-source("Publish_Process.R")
+source("ExperimentProcessing.R")
 
 ####### Specify Cross-Mode Combination Method (If Needed) #######
 source("Join_BlockCode.R")
