@@ -38,7 +38,7 @@ Feature_Data <- Data_Input %>%
 
 print(paste0("Calculating Summary Statistics for ", ExpID,"_",theMode))
 
-Abundance_Data.table <- data.table(Abundance_Data)
+Abundance_Data.table <- data.table(Abundance_Data) # Performing Calculations in data.table package for efficiency
 
 setkey(Abundance_Data.table, FeatureNumber, SampleDetail)
 
@@ -56,16 +56,16 @@ Graph_Table <- tbl_df(Graph_Table.table[, `:=` (CV = round((StdAbun / MeanAbun),
                                                 (StdAbun/MeanAbun < ReplicateCV_Threshold)) |
                                                 ReplicateCV_Threshold == FALSE))
                                         ]) %>%
-  mutate(SampleFeature = ifelse(ReplicateThresholdFlag & CVThresholdFlag,1,0))
+  mutate(SampleFeature = ifelse(ReplicateThresholdFlag & CVThresholdFlag, 1, 0))
 
 BlankSub_Data <- Graph_Table %>% 
   filter(SampleDetail == "Blank") %>%
   mutate(Blank_avgvol = ifelse(is.nan(MeanAbun), 0, MeanAbun),
-         Blank_medvol = ifelse(is.na(MedAbun),0 , MedAbun)) %>%
+         Blank_medvol = ifelse(is.na(MedAbun), 0 , MedAbun)) %>%
   select(FeatureNumber, ends_with("vol")) %>%
   full_join(filter(Graph_Table,SampleDetail != "Blank")) %>%
   mutate(subMeanAbun = ifelse(MeanAbun - Blank_avgvol < 0, 0, MeanAbun - Blank_avgvol),
-         subMedAbun = ifelse(MedAbun - Blank_medvol <0 , 0, MedAbun - Blank_medvol)) 
+         subMedAbun = ifelse(MedAbun - Blank_medvol < 0, 0, MedAbun - Blank_medvol)) 
 
 # Create flag for features that are not considered sample features.
 Remove_by_Sample_Feature <- BlankSub_Data %>%
@@ -88,6 +88,19 @@ SampleFeature_Flag <- Feature_Data %>%
     FalseSampleFeature_Flag = FeatureNumber %in% Remove_by_Sample_Feature$FeatureNumber
   )
 
+# Calculate blank ratio and create flag for features that are below the spike threshold.
+SpikeThreshold_Flag <- BlankSub_Data %>%
+mutate(BlankRatio = MedAbun / (Blank_medvol + 1),
+       AboveSpikeThreshold = (BlankRatio >= BlankRatio_Threshold)) %>%
+  select(FeatureNumber, MedAbun, AboveSpikeThreshold) %>%
+  group_by(FeatureNumber) %>%
+  summarise(SumSpikeThreshold = sum(AboveSpikeThreshold, na.rm = TRUE)) %>%
+  select(FeatureNumber, SumSpikeThreshold) %>%
+  arrange(FeatureNumber) %>%
+  ungroup() %>%
+  mutate(BelowSpike_Flag = (SumSpikeThreshold < SignificantSample_Threshold)) %>%
+  select(FeatureNumber, BelowSpike_Flag)
+
 #Create negative mass defect variable, and flags for MissingScore, LowScore, and expected WeakMatches
 Score_Mass_Flags <- Feature_Data %>%
   select(Score, Mass, FeatureNumber, Compound) %>%
@@ -107,18 +120,7 @@ Score_Mass_Flags <- Feature_Data %>%
   ) %>%
   select(FeatureNumber, Compound, Score, NegMassDefect_Flag, MissingScore_Flag, LowScore_Flag, WeakMatch_Flag)
 
-# Calculate blank ratio and create flag for features that are below the spike threshold.
-SpikeThreshold_Flag <-  BlankSub_Data %>%
-mutate(BlankRatio = MedAbun / (Blank_medvol + 1),
-       AboveSpikeThreshold = (BlankRatio >= BlankRatio_Threshold)) %>%
-  select(FeatureNumber, MedAbun, AboveSpikeThreshold) %>%
-  group_by(FeatureNumber) %>%
-  summarise(SumSpikeThreshold = sum(AboveSpikeThreshold, na.rm = TRUE)) %>%
-  select(FeatureNumber, SumSpikeThreshold) %>%
-  arrange(FeatureNumber) %>%
-  ungroup() %>%
-  mutate(BelowSpike_Flag = (SumSpikeThreshold < SignificantSample_Threshold)) %>%
-  select(FeatureNumber, BelowSpike_Flag)
+
 
 ####### Create Flags for potential adducts ######
 adductFlag <- function(input,adductName,adductMass,masserror=adduct_masserror,timetolerance = adduct_timetolerance){
@@ -175,7 +177,7 @@ UniquenessFilter <- Feature_Data %>%
   select(-Delete) %>%
   separate(Compound, c("Compound", "Delete"), sep = "\\s") %>%
   select(-contains("adduct"), -Delete) %>%
-  mutate(RetentionTime = round(RetentionTime,1)) %>% # Enforce RT grouping at 0.1 min resolution, I'm Sorry
+  mutate(RetentionTime = round(RetentionTime,1)) %>% # Use RT grouping at 0.1 min resolution, I'm Sorry
   mutate(
     holdme = ifelse(grepl("^[0-9]", Compound), round(as.numeric(Compound),1), 0),
     Roughname = ifelse(holdme == 0, Compound, holdme),
@@ -305,7 +307,14 @@ if (OutputFormat_wide == TRUE | PairedProcessing == TRUE) {
            Score),
            DummyFrame_Split)
   
-  Raw_Flagged_Wide <- left_join(Sample_Raws, All_Flags)
+  Raw_Flagged_Wide <- left_join(Sample_Raws, All_Flags) %>%
+    mutate(
+      Compound = ifelse(
+        (LowScore_Flag == FALSE | (LowScore_Flag == TRUE & WeakMatch_Flag == TRUE)),
+        Compound,
+        paste0(Mass,"@",RetentionTime)
+      )
+    )
   
   if (OutputFormat_wide == TRUE) {
     Raw_Flagged <- Raw_Flagged_Wide
@@ -317,8 +326,14 @@ Filtered_Data <- Raw_Flagged %>%
     FalseSampleFeature_Flag == FALSE,
     BelowSpike_Flag == FALSE,
     Duplicate_Flag == FALSE | (Duplicate_Flag == TRUE & Duplicate_Keep_Flag == TRUE)
+  )  %>%
+  mutate(
+    Compound = ifelse(
+      (LowScore_Flag == FALSE | (LowScore_Flag == TRUE & WeakMatch_Flag == TRUE)),
+      Compound,
+      paste0(Mass,"@",RetentionTime)
+    )
   )
-
 #Export file that includes all features and all flags, no additional filtering
 
 outputName <- paste0(ExpID,"_$",Raw_Flagged$IonMode[1],"$_")
@@ -328,13 +343,13 @@ print("Writing Output Files")
 returnName <- paste0(outputName,"Filtered_", Sys.Date(),".csv")
 
 if (OutputRaw == TRUE) {
-write_csv(Raw_Flagged, paste0(outputName,"Raw_Flagged_", Sys.Date(),".csv"), na = "")
+write_csv(Raw_Flagged, paste0(outputName,"RawFlagged_", Sys.Date(),".csv"), na = "")
 }
 
 #Export file that includes features where the blanks have been subtracted and some features have been filtered out along with the flag columns.
 write_csv(Filtered_Data, paste0(outputName,"Filtered_", Sys.Date(),".csv"), na = "")
 
-if (PairedProcessing == TRUE) {
+if (PairedProcessing == TRUE & OutputFormat_wide == FALSE) {
   Filtered_Data <- Raw_Flagged_Wide %>%
     filter(
       FalseSampleFeature_Flag == FALSE,

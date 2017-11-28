@@ -10,7 +10,7 @@ check.packages <- function(package){
   sapply(package, require, character.only = TRUE)
 }
 
-packages<-c("tidyverse", "stringr", "sqldf", "readxl", "data.table", "tcltk")
+packages<-c("tidyverse", "stringr", "sqldf", "readxl", "data.table", "tcltk2")
 
 check.packages(packages)
 
@@ -97,7 +97,7 @@ UniqueCompounds <- #Parse unique compounds from output files for Dashboard Searc
     
     Compound_working <- Compound_List %>%
       select(Compound, -contains("Flag")) %>%
-      mutate(Compound_Flag = grepl("[a-z]",Compound)) %>%
+      mutate(Compound_Flag = grepl("[A-Z]",Compound)) %>%
       filter(Compound_Flag == TRUE) %>%
       mutate(Compound = sub("(\\s[0-9].*)","",Compound)) %>%
       unique()
