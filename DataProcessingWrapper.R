@@ -2,7 +2,7 @@
 #November 26, 2017
 
 ##### Check for, install, and load necessary packages ####
-
+f <- function() {
 check.packages <- function(package){
   new.package <- package[!(package %in% installed.packages()[, "Package"])]
   if (length(new.package)) 
@@ -20,11 +20,11 @@ SampleInput <- # Generic data input from multiple file types
     inputFilename <- c(filename)
     
     if (grepl("\\.(tsv|txt)$",inputFilename)) {
-      Data <- read_tsv(inputFilename, comment = "#", na = c("NA"," ", "-"), guess_max=100000)
+      Data <- read_tsv(inputFilename, comment = "#", na = c("NA"," ", "-", "0"), guess_max=100000)
     }
     
     if (grepl("\\.(csv)$",inputFilename)) {
-      Data <- read_csv(inputFilename, comment = "#", na = c("NA"," ", "-"), guess_max=100000)
+      Data <- read_csv(inputFilename, comment = "#", na = c("NA"," ", "-", "0"), guess_max=100000)
     }
     
     if (grepl("\\.(xls|xlsx)$",inputFilename) | grepl(".xls$",inputFilename)) {
@@ -109,6 +109,9 @@ UniqueCompounds <- #Parse unique compounds from output files for Dashboard Searc
 ####### Specify Global Variables From File #######
 source("config.R")
 
+####### Eventually Specify Sample Input Method #####
+source("SampleInput_MPP.R")
+
 ####### Specify Per-File Processing Workflow #######
 source("ExperimentProcessing.R")
 
@@ -130,6 +133,7 @@ if (PairedProcessing == TRUE) {
   lapply(processed_samples, UniqueCompounds)
 }
 
+}
 ####### Eventually Run Dahsboard Search via API #######
 
 ####### Eventually Generate Toxpi Output In-Line #######

@@ -1,36 +1,22 @@
 NTA_Process <- function(inputFilename)
 {
-  Data_Input <- SampleInput(inputFilename) %>%
-  arrange(Mass, `Retention Time`) %>%
-  mutate(FeatureNumber = as.numeric(seq.int(nrow(.))))
+####### Sample Input Functions #######
+
+print(paste0("Loading Data for ", inputFilename))
+
+Data_Input <- PrepareFile(inputFilename)
 
 Abundance_Data <- Data_Input %>%
-  gather(contains("_"), key = "filename", value = "volume") %>%
-  separate(
-    "filename", # Split filenames at "_" to gain metadata
-    into = c("ExpID", "IonMode", "ModeDetail", "SampleDetail", "Rep"),
-    sep = "_"
-  ) %>%
-  mutate(
-    volume = ifelse(volume == 1 | volume == 0, NA, volume), #Replace missing value export with missing
-    SampleDetail = ifelse(SampleDetail %in% Blank_Sample_Names, "Blank", SampleDetail) #Rename Blank sample ID internally
-  ) %>%
   select(FeatureNumber,ExpID,IonMode,ModeDetail,SampleDetail,Rep,volume) #Drop Feature Data from this table for speed
 
 ExpID <- Abundance_Data$ExpID[1]                # Store ExpID and list of SampleIDs for later
 theMode <- Abundance_Data$IonMode[1]
 SampleIDs <- unique(Abundance_Data$SampleDetail)
 
-print(paste0("Generating Feature Date for ", ExpID,"_",theMode))
+print(paste0("Generating Feature matrix for ", ExpID,"_",theMode))
 
 Feature_Data <- Data_Input %>%
-  select(-contains(ExpID)) %>% #Drop Abundance Data from this matrix for speed 
-  mutate(Score = as.numeric(str_extract(
-    Annotations,"(?<=overall=)(.*)(?=,)"))) %>%
-  separate(Compound, c("Compound", "Delete"), sep = " Esi") %>%
-  rename("RetentionTime" = `Retention Time`) %>%
-  select(FeatureNumber,Mass,RetentionTime,Compound,Score,Frequency) %>%
-  left_join(distinct(select(Abundance_Data,IonMode,FeatureNumber))) %>%
+  select(FeatureNumber,Mass,RetentionTime,Compound,Score,Frequency,IonMode) %>%
   distinct(.keep_all=TRUE)
 
 
@@ -120,6 +106,23 @@ Score_Mass_Flags <- Feature_Data %>%
   ) %>%
   select(FeatureNumber, Compound, Score, NegMassDefect_Flag, MissingScore_Flag, LowScore_Flag, WeakMatch_Flag)
 
+if (OutputRaw == FALSE) { # Filter before SQL calls for speed if no RAW output
+  Feature_Data <- Feature_Data %>%
+    left_join(SampleFeature_Flag) %>%
+    left_join(SpikeThreshold_Flag)%>%
+    left_join(Score_Mass_Flags) %>%
+    filter(
+      FalseSampleFeature_Flag == FALSE,
+      BelowSpike_Flag == FALSE
+    )  %>%
+    mutate(
+      Compound = ifelse(
+        (LowScore_Flag == FALSE | (LowScore_Flag == TRUE & WeakMatch_Flag == TRUE)),
+        Compound,
+        paste0(Mass,"@",RetentionTime)
+        )
+      )
+}
 
 
 ####### Create Flags for potential adducts ######

@@ -22,7 +22,7 @@ Expo_Weight = 1
 Freq_Weight = 2
 
 Dashboard_inputFile <- c("data/Dashboard Search Output.tsv")
-Abundance_inputFile <- c("AHHS Soil_$Negative$_W+Filtered_2017-11-27.csv") 
+Abundance_inputFile <- c("AHHS Soil_$Negative$_Filtered_2017-11-30.csv") 
 
 Dashboard_Tidy <- formatToxPi(Dashboard_inputFile) %>%
   rename(Compound = INPUT)
@@ -67,7 +67,6 @@ Combined_File <- full_join(Sample_ToxPi_Data,Dashboard_Tidy) %>%
   mutate(log10_avgAbun = rowMeans(select(.,contains("Med")), na.rm = TRUE)) %>%
   select(-contains("Med")) %>%
   mutate(Chemical=str_c(Compound,Preferred_Name, sep=": "),
-         Chemical=str_wrap(Chemical, width=20),
          Pi_Bioactivity = (Tox21_Activities-min(Tox21_Activities, na.rm=TRUE))/(max(Tox21_Activities, na.rm=TRUE)-min(Tox21_Activities, na.rm=TRUE)),
          Pi_Exposure=(ExposureCategory-min(ExposureCategory,na.rm=TRUE))/(max(ExposureCategory, na.rm=TRUE)-min(ExposureCategory, na.rm=TRUE)),
          Pi_Abundance=(log10_avgAbun-min(log10_avgAbun, na.rm=TRUE))/(max(log10_avgAbun, na.rm=TRUE)-min(log10_avgAbun, na.rm=TRUE)),
@@ -117,11 +116,12 @@ Graph_Table <- Pi_Test %>%
   gather(contains("Pi_"), key = sub_Pi, value = height) %>%
   left_join(Graph_Weights) %>%
   ungroup() %>%
+  mutate(Chemical=str_wrap(Chemical, width=20))%>%
   arrange(desc(ToxPiScore))
 
 Chem_List <- unique(Graph_Table$Chemical)
 
-paginate = 6
+paginate = 9
 chunks <- split(Chem_List, ceiling(seq_along(Chem_List)/paginate))
 
 pdf("ToxPiGraphs.pdf")
