@@ -17,7 +17,7 @@ pairedvar <- sqldf(
     where a.rawfiles = b.rawfiles
     and a.ModeType != b.ModeType"
   )
-  ) %>% filter(ModeType == "Positive")
+  ) %>% filter(ModeType %in% c("Positive", "Pos", "Esi+"))
 
 for (n in 1:(length(pairedvar$filenames))) {
   
@@ -98,7 +98,7 @@ for (n in 1:(length(pairedvar$filenames))) {
     rename(N_Hits = n) %>%
     ungroup()%>%
     filter(BothModes_Flag == FALSE |
-          (BothModes_Flag == TRUE & IonMode == "Positive")) %>%
+          (BothModes_Flag == TRUE & (IonMode %in% c("Positive", "Pos", "Esi+")))) %>%
     group_by(Compound)%>%
     summarize(N_CompoundHits = sum(N_Hits))
   

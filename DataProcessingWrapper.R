@@ -2,7 +2,7 @@
 #November 26, 2017
 
 ##### Check for, install, and load necessary packages ####
-f <- function() {
+
 check.packages <- function(package){
   new.package <- package[!(package %in% installed.packages()[, "Package"])]
   if (length(new.package)) 
@@ -133,7 +133,7 @@ if (PairedProcessing == TRUE) {
   lapply(processed_samples, UniqueCompounds)
 }
 
-}
+
 ####### Eventually Run Dahsboard Search via API #######
 
 ####### Eventually Generate Toxpi Output In-Line #######
