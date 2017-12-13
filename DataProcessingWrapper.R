@@ -102,7 +102,7 @@ UniqueCompounds <- #Parse unique compounds from output files for Dashboard Searc
       mutate(Compound = sub("(\\s[0-9].*)","",Compound)) %>%
       unique()
     
-    write_csv(Compound_working, paste0(var,"_UniqueCompounds.csv"))
+    write_csv(Compound_working, paste0(input,"_UniqueCompounds.csv"))
     
   }
 
