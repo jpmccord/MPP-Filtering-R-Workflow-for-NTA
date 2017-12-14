@@ -134,7 +134,69 @@ if (PairedProcessing == TRUE) {
 }
 
 
+myList <- UniqueCompounds("AHHS Soil_$Esi-$_Filtered_2017-05-24.csv") %>%
+  mutate(Compounds = paste0(Compound, "\n"))
+
+writeClipboard(head(myList$Compound))
+
 ####### Eventually Run Dahsboard Search via API #######
+if (autoDashboard == TRUE){
+check.packages("RSelenium")
+
+selscroll <- function() webElem$sendKeysToElement(list(key = "page_down"))
+
+rD <- rsDriver(remoteServerAddr = "localhost",
+               browser = "chrome",
+               check = FALSE,
+               verbose = FALSE,
+               )
+remDr <- rD[["client"]]
+remDr$setWindowSize(800, 800)
+remDr$navigate("https://comptox.epa.gov/dashboard/dsstoxdb/batch_search")
+
+webElem <- remDr$findElement("css", "body")
+
+selscroll()
+
+remDr$findElement('xpath', "//*[@name = 'input_types[]' and @value = 'compounds.mol_formula']")$clickElement()
+
+textbox <- remDr$findElement(using= 'id', value = "list-search-text-box")
+textbox$sendKeysToElement(list(key = 'control',"v", key = 'control'))
+
+selscroll()
+
+remDr$findElement('xpath', "//*[@href = '#batch-search-panel']")$clickElement()
+
+selscroll()
+
+#iframe <- remDr$findElement(using='id', value="list-search-select-box")
+#remDr$switchToFrame(iframe)
+
+option <- remDr$findElement(using = 'xpath', "//*/option[@value = 'tsv']")
+option$clickElement()
+
+CASRN <- remDr$findElement('xpath', "//*[@value = 'generic_substances.casrn']")
+CASRN$clickElement()
+remDr$findElement('xpath', "//*[@value = 'compounds.acd_iupac_name']")$clickElement()
+
+molform <- remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'compounds.mol_formula']")
+molform$clickElement()
+
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'compounds.monoisotopic_mass']")$clickElement()
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'opera_predictions']")$clickElement()
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'test_predictions']")$clickElement()
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'count(distinct b.fk_chemical_list_id) as data_sources']")$clickElement()
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'hit_counts.active_assay_count as percent_active_calls, hit_counts.total_assay_count as number_active_assays_vs_total']")$clickElement()
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'expocast_models.casrn as expocast, expocast_models.Total_median as expocast_median_exposure_prediction, expocast_models.inNHANES as nhanes']")$clickElement()
+remDr$findElement('xpath', "//*[@name = 'columns[]' and  @value = 'toxval.toxval_type as toxval_data']")$clickElement()
+
+webElem$sendKeysToElement(list(key = "end"))
+remDr$findElement('xpath', "//*[@id = 'list-search-submit']")$clickElement()
+
+remDr$close()
+rD[["server"]]$stop()
+
+}
 
 ####### Eventually Generate Toxpi Output In-Line #######
 source("ToxPiScores.R")

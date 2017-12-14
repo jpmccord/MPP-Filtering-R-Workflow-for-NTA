@@ -19,6 +19,8 @@ OutputRaw = FALSE # Output unfiltered data in addition to filtered data
 PairedProcessing = TRUE #If True, pair Pos and Neg outputs into one file for Dashboard searching
 Collapse_Reps = TRUE # Collapse replicate injections into a single avg/med abundance
 
+autoDashboard = FALSE #Load Webdrive to search Dashboard (placeholder)
+
 #Processing Workflow variables
 ReplicateFeature_Threshold = 0.8  #Fraction of replicates where feature is observed to classify as "real"
 ReplicateCV_Threshold = FALSE #False if no CV filtering, otherwise minium replicate CV to classify as "real"
