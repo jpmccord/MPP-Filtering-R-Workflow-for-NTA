@@ -233,8 +233,8 @@ if (Collapse_Reps == FALSE) {
     left_join(unique(select(BlankSub_Data,FeatureNumber,Blank_avgvol,Blank_medvol))) %>%
     filter(SampleDetail != "Blank") %>%
     mutate(SampleDetail = gsub(" ",".",SampleDetail))%>%
-    mutate(subMeanAbun = volume - Blank_avgvol,
-           subMedAbun = volume - Blank_medvol,
+    mutate(subMeanAbun = ifelse(MeanAbun - Blank_avgvol < 0, 0, MeanAbun - Blank_avgvol),
+           subMedAbun = ifelse(MedAbun - Blank_medvol < 0, 0, MedAbun - Blank_medvol),
            MeanAbun = volume,
            MedAbun = volume,
            Rep = str_extract(Rep,"[0-9]*"),
