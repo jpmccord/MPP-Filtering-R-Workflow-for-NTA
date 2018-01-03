@@ -134,13 +134,17 @@ if (PairedProcessing == TRUE) {
 }
 
 
-myList <- UniqueCompounds("AHHS Soil_$Esi-$_Filtered_2017-05-24.csv") %>%
-  mutate(Compounds = paste0(Compound, "\n"))
-
-writeClipboard(head(myList$Compound))
 
 ####### Eventually Run Dahsboard Search via API #######
+
+
 if (autoDashboard == TRUE){
+
+  myList <- UniqueCompounds("AHHS Soil_$Esi-$_Filtered_2017-05-24.csv") %>%
+    mutate(Compounds = paste0(Compound, "\n"))
+  
+  writeClipboard(head(myList$Compound))
+  
 check.packages("RSelenium")
 
 selscroll <- function() webElem$sendKeysToElement(list(key = "page_down"))
