@@ -21,8 +21,8 @@ Abun_Weight = 1
 Expo_Weight = 1
 Freq_Weight = 2
 
-Dashboard_inputFile <- c("data/Dashboard Search Output.tsv")
-Abundance_inputFile <- c("AHHS Soil_$Negative$_Filtered_2017-11-30.csv") 
+Dashboard_inputFile <- c("ChemistryDashboard-Batch-Search_2018-01-05_14_59_03.tsv")
+Abundance_inputFile <- c("Joined_FFMask_Filtered_2018-01-05.csv") 
 
 Dashboard_Tidy <- formatToxPi(Dashboard_inputFile) %>%
   rename(Compound = INPUT)
@@ -83,12 +83,14 @@ Combined_File <- full_join(Sample_ToxPi_Data,Dashboard_Tidy) %>%
          Compound_Classification) %>%
   arrange(Chemical) %>%
   group_by(Chemical) %>%
-  filter(ToxPiScore == max(ToxPiScore)) %>%
-  ungroup() %>% group_by(Compound) %>%
-  mutate(alpha_beta = ifelse(ToxPiScore == max(ToxPiScore), "\U03B1","\U03B2")) %>%
+  filter(ToxPiScore == max(ToxPiScore) | is.na(max(ToxPiScore))) %>%
+  ungroup() %>% 
+  group_by(Compound) %>%
+  mutate(alpha_beta = ifelse(ToxPiScore != max(ToxPiScore, na.rm = TRUE) | is.na(max(ToxPiScore, na.rm = TRUE)), "\U03B2","\U03B1"),
+         alpha_beta = ifelse(is.na(alpha_beta), "\U03B3", alpha_beta)) %>%
   mutate(Class = paste0(Compound_Classification, alpha_beta)) 
 
-write.csv(Combined_File,"ToxPiTable.csv")
+write_excel_csv(Combined_File,"ToxPiTable.csv")
 
 
 Bio_Weight = 2
@@ -105,9 +107,9 @@ Graph_Weights$w <- cumsum(Graph_Weights$weight)
 Graph_Weights$wm <- Graph_Weights$w - Graph_Weights$weight
 Graph_Weights$wt <- with(Graph_Weights, wm + (w - wm)/2)
 
-Pi_Test <- Combined_File
 
-Graph_Table <- Pi_Test %>%
+Graph_Table <- Combined_File %>%
+  filter(!is.na(ToxPiScore))%>%
   gather(contains("Pi_"), key = sub_Pi, value = height) %>%
   full_join(Weight_tbl) %>%
   group_by(Chemical) %>%
