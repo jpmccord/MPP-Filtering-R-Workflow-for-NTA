@@ -6,7 +6,7 @@ DataProcessingWrapper loads config file and necessary functions from other scrip
 
 config file contains variables detailing MPP input files, processing variables, and output settings. 
 
-SampleInput_XXX.R scripts are intended to reformat known output formats into the format expected by the processing workflow. Expedcted columns are:
+SampleInput_XXX.R scripts are intended to reformat known output formats into the format expected by the processing workflow. Expecdted columns are:
 FeatureNumber
 ExpID
 IonMode
